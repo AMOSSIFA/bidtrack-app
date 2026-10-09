@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BidTrack — Tender Reporting System</title>
+<style>
+:root{--navy:#142b4a;--blue:#2463eb;--bg:#f4f7fb;--text:#172033;--muted:#64748b;--line:#e2e8f0;--green:#15803d;--amber:#b45309;--red:#b91c1c}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:var(--navy);color:white;padding:22px max(20px,calc((100% - 1200px)/2));display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{font-size:23px;font-weight:800;letter-spacing:.2px}.brand small{display:block;font-size:12px;font-weight:400;opacity:.8;margin-top:4px}
+.wrap{max-width:1200px;margin:24px auto;padding:0 18px}.topline{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-size:25px;margin:0 0 6px}p.sub{color:var(--muted);margin:0;font-size:14px}
+button,.btn{border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer;font-size:13px}.primary{background:var(--blue);color:white}.secondary{background:white;border:1px solid var(--line);color:var(--text)}.danger{background:#fee2e2;color:#991b1b}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:20px 0}
+.stat{background:white;border:1px solid var(--line);border-radius:14px;padding:18px}.stat .label{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}.stat .num{font-size:30px;font-weight:800;margin-top:8px}.stat .hint{font-size:12px;color:var(--muted);margin-top:4px}
+.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px}.panel h2{font-size:17px;margin:0 0 15px}
+.filters{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+input,select,textarea{width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:10px 11px;background:white;font:inherit;font-size:13px;color:var(--text)}
+.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:900px}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}th{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);background:#f8fafc}
+.pill{display:inline-block;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}.interested{background:#dbeafe;color:#1d4ed8}.submitted{background:#dcfce7;color:#166534}.review{background:#fef3c7;color:#92400e}.awarded{background:#ede9fe;color:#6d28d9}.unsuccessful{background:#fee2e2;color:#991b1b}.draft{background:#e2e8f0;color:#334155}
+.actions{display:flex;gap:6px;flex-wrap:wrap}.actions button{padding:7px 9px;font-size:11px}
+.empty{text-align:center;color:var(--muted);padding:30px}
+.modal{display:none;position:fixed;inset:0;background:#0f172a88;z-index:5;padding:20px;overflow:auto}.modal.open{display:block}.dialog{max-width:760px;margin:30px auto;background:white;border-radius:16px;padding:22px}.dialoghead{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.dialoghead h2{margin:0}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.field label{display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:6px}.field.full{grid-column:1/-1}.formactions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.notice{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.5;margin-bottom:18px}
+.deadline-soon{color:#b45309;font-weight:800}.overdue{color:#b91c1c;font-weight:800}.muted{color:var(--muted)}footer{text-align:center;color:var(--muted);font-size:12px;padding:10px 0 30px}
+@media(max-width:760px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.filters{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}header{padding:18px}.wrap{margin:18px auto}}
+@media(max-width:420px){.cards{grid-template-columns:1fr 1fr}.stat{padding:13px}.stat .num{font-size:25px}.filters{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="brand">BidTrack <small>Tender & Proposal Opportunity Reporting</small></div><div style="font-size:13px;opacity:.9">Shared workflow for your bidding team</div></header>
+<main class="wrap">
+ <div class="topline"><div><h1>Bid Opportunity Dashboard</h1><p class="sub">Record opportunities, monitor progress, and keep submission deadlines visible.</p></div><div class="actions"><button class="secondary" id="exportBtn">Export CSV</button><button class="primary" id="addBtn">+ Add Bid Opportunity</button></div></div>
+ <div class="notice"><strong>Prototype storage note:</strong> this version saves records in this browser on this device. To let both colleagues see the same live records from different devices, deploy it with a shared database and user sign-in.</div>
+ <section class="cards">
+  <div class="stat"><div class="label">Total Opportunities</div><div class="num" id="total">0</div><div class="hint">All recorded bids</div></div>
+  <div class="stat"><div class="label">Interested / Draft</div><div class="num" id="interestedCount">0</div><div class="hint">Being assessed or prepared</div></div>
+  <div class="stat"><div class="label">Submitted</div><div class="num" id="submittedCount">0</div><div class="hint">Proposal sent to procuring entity</div></div>
+  <div class="stat"><div class="label">Under Review</div><div class="num" id="reviewCount">0</div><div class="hint">Awaiting evaluation or feedback</div></div>
+ </section>
+ <section class="panel"><h2>Bid Register</h2>
+  <div class="filters">
+   <input id="search" placeholder="Search tender, organisation, reference…">
+   <select id="statusFilter"><option value="">All statuses</option><option>Interested</option><option>Drafting</option><option>Submitted</option><option>Under Review</option><option>Awarded</option><option>Unsuccessful</option></select>
+   <select id="ownerFilter"><option value="">All team members</option></select>
+   <select id="deadlineFilter"><option value="">All deadlines</option><option value="upcoming">Deadline in next 7 days</option><option value="overdue">Deadline passed</option></select>
+  </div>
+  <div class="tablewrap"><table><thead><tr><th>Tender / Opportunity</th><th>Organisation & Ref.</th><th>Publishing Date</th><th>Submission Deadline</th><th>Owner</th><th>Status</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table></div>
+  <div id="empty" class="empty">No bid opportunities yet. Select “Add Bid Opportunity” to create your first record.</div>
+ </section>
+ <section class="panel"><h2>Quick reporting guide</h2><p class="sub">Update a bid's status as it progresses. Use the notes field to record clarification questions, mandatory documents, submission method, contact person, and next follow-up date. Export the register to CSV for weekly reporting.</p></section>
+ <footer>BidTrack • Tender reporting workspace</footer>
+</main>
+<div class="modal" id="modal"><div class="dialog"><div class="dialoghead"><h2 id="modalTitle">Add Bid Opportunity</h2><button class="secondary" id="closeBtn">Close</button></div>
+<form id="bidForm"><input type="hidden" id="bidId">
+<div class="formgrid">
+ <div class="field full"><label for="title">Tender / Opportunity Title *</label><input id="title" required placeholder="e.g. Supply and delivery of computer equipment"></div>
+ <div class="field"><label for="organisation">Procuring Organisation *</label><input id="organisation" required placeholder="Organisation / company"></div>
+ <div class="field"><label for="reference">Tender / Reference Number</label><input id="reference" placeholder="e.g. TENDER/ICT/04/2026"></div>
+ <div class="field"><label for="published">Publishing Date</label><input id="published" type="date"></div>
+ <div class="field"><label for="deadline">Submission Deadline *</label><input id="deadline" type="date" required></div>
+ <div class="field"><label for="owner">Responsible Team Member *</label><input id="owner" required placeholder="Your name or colleague's name"></div>
+ <div class="field"><label for="status">Current Status *</label><select id="status" required><option>Interested</option><option>Drafting</option><option>Submitted</option><option>Under Review</option><option>Awarded</option><option>Unsuccessful</option></select></div>
+ <div class="field"><label for="source">Tender Document (PDF or JPEG)</label><input id="source" type="file" accept="application/pdf,image/jpeg,image/jpg,.pdf,.jpg,.jpeg"><div id="fileHelp" class="muted" style="font-size:11px;margin-top:5px">Upload a PDF or JPEG copy of the tender document.</div><div id="existingFile" style="font-size:12px;margin-top:5px"></div></div>
+ <div class="field"><label for="submittedDate">Date Submitted</label><input id="submittedDate" type="date"></div>
+ <div class="field full"><label for="notes">Notes / Next Action</label><textarea id="notes" rows="3" placeholder="Required documents, clarification questions, follow-up date, contact person…"></textarea></div>
+</div><div class="formactions"><button type="button" class="secondary" id="cancelBtn">Cancel</button><button type="submit" class="primary">Save Opportunity</button></div>
+</form></div></div>
+<script>
+const KEY='bidtrack_opportunities_v1';
+let bids=[];
+try{bids=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){bids=[]}
+const $=id=>document.getElementById(id);
+const fields=['title','organisation','reference','published','deadline','owner','status','submittedDate','notes'];
+let pendingFile = null;
+let pendingFileName = '';
+function save(){localStorage.setItem(KEY,JSON.stringify(bids));render()}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function dateFmt(s){if(!s)return '—';const d=new Date(s+'T00:00:00');return d.toLocaleDateString(undefined,{day:'2-digit',month:'short',year:'numeric'})}
+function statusClass(s){return ({'Interested':'interested','Drafting':'draft','Submitted':'submitted','Under Review':'review','Awarded':'awarded','Unsuccessful':'unsuccessful'})[s]||'draft'}
+function deadlineText(b){if(!b.deadline)return '—';const now=new Date();now.setHours(0,0,0,0);const d=new Date(b.deadline+'T00:00:00');const days=Math.ceil((d-now)/86400000);if(days<0)return `<span class="overdue">${dateFmt(b.deadline)} · overdue</span>`;if(days<=7 && !['Awarded','Unsuccessful'].includes(b.status))return `<span class="deadline-soon">${dateFmt(b.deadline)} · ${days===0?'today':days+' day(s)'}</span>`;return dateFmt(b.deadline)}
+function render(){
+ $('total').textContent=bids.length;
+ $('interestedCount').textContent=bids.filter(b=>['Interested','Drafting'].includes(b.status)).length;
+ $('submittedCount').textContent=bids.filter(b=>b.status==='Submitted').length;
+ $('reviewCount').textContent=bids.filter(b=>b.status==='Under Review').length;
+ const oldOwner=$('ownerFilter').value;const owners=[...new Set(bids.map(b=>b.owner).filter(Boolean))].sort();
+ $('ownerFilter').innerHTML='<option value="">All team members</option>'+owners.map(o=>`<option>${esc(o)}</option>`).join('');$('ownerFilter').value=owners.includes(oldOwner)?oldOwner:'';
+ const q=$('search').value.toLowerCase(),st=$('statusFilter').value,owner=$('ownerFilter').value,df=$('deadlineFilter').value;
+ const today=new Date();today.setHours(0,0,0,0);
+ const list=bids.filter(b=>{
+  const hay=[b.title,b.organisation,b.reference,b.owner,b.notes].join(' ').toLowerCase();
+  if(q&&!hay.includes(q))return false;if(st&&b.status!==st)return false;if(owner&&b.owner!==owner)return false;
+  if(df==='overdue'&&(!b.deadline||new Date(b.deadline+'T00:00:00')>=today))return false;
+  if(df==='upcoming'){if(!b.deadline)return false;const d=new Date(b.deadline+'T00:00:00');if(d<today||d>new Date(today.getTime()+7*86400000))return false}
+  return true;
+ }).sort((a,b)=>(a.deadline||'9999').localeCompare(b.deadline||'9999'));
+ $('rows').innerHTML=list.map(b=>`<tr><td><strong>${esc(b.title)}</strong>${b.notes?`<div class="muted" style="margin-top:5px;max-width:260px">${esc(b.notes)}</div>`:''}${b.fileData?`<div style="margin-top:5px"><a href="${b.fileData}" download="${esc(b.fileName||'tender-document')}" target="_blank" rel="noopener">Open ${esc(b.fileName||'tender document')} ↗</a></div>`:''}</td><td>${esc(b.organisation)}<div class="muted" style="margin-top:4px">${esc(b.reference||'No reference')}</div></td><td>${dateFmt(b.published)}</td><td>${deadlineText(b)}</td><td>${esc(b.owner)}</td><td><span class="pill ${statusClass(b.status)}">${esc(b.status)}</span>${b.submittedDate?`<div class="muted" style="margin-top:5px">Sent: ${dateFmt(b.submittedDate)}</div>`:''}</td><td><div class="actions"><button class="secondary" onclick="editBid('${b.id}')">Edit</button><button class="danger" onclick="deleteBid('${b.id}')">Delete</button></div></td></tr>`).join('');
+ $('empty').style.display=list.length?'none':'block';
+}
+function openModal(b=null){
+ $('bidForm').reset();$('bidId').value=b?.id||'';
+ fields.forEach(f=>$(f).value=b?.[f]||'');
+ pendingFile=b?.fileData||null;pendingFileName=b?.fileName||'';
+ $('existingFile').innerHTML=pendingFile?`Current file: <strong>${esc(pendingFileName)}</strong> <span class="muted">(upload another file to replace it)</span>`:'No file selected yet.';
+ $('modalTitle').textContent=b?'Edit Bid Opportunity':'Add Bid Opportunity';$('modal').classList.add('open')
+}
+function closeModal(){$('modal').classList.remove('open')}
+$('addBtn').onclick=()=>openModal();$('closeBtn').onclick=closeModal;$('cancelBtn').onclick=closeModal;
+$('search').addEventListener('input',render);['statusFilter','ownerFilter','deadlineFilter'].forEach(id=>$(id).addEventListener('change',render));
+$('source').addEventListener('change',()=>{
+ const file=$('source').files[0];
+ if(!file)return;
+ const validType=['application/pdf','image/jpeg','image/jpg'].includes(file.type) || /\.(pdf|jpe?g)$/i.test(file.name);
+ if(!validType){alert('Please choose a PDF or JPEG file.');$('source').value='';return}
+ if(file.size>4*1024*1024){alert('Please choose a file smaller than 4 MB so it can be saved reliably in this browser.');$('source').value='';return}
+ const reader=new FileReader();
+ reader.onload=()=>{pendingFile=reader.result;pendingFileName=file.name;$('existingFile').innerHTML=`Selected file: <strong>${esc(file.name)}</strong>`};
+ reader.readAsDataURL(file);
+});
+$('bidForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ const id=$('bidId').value||crypto.randomUUID();const item={id};
+ fields.forEach(f=>item[f]=$(f).value.trim());
+ item.fileData=pendingFile;item.fileName=pendingFileName;
+ const i=bids.findIndex(b=>b.id===id);if(i>=0)bids[i]=item;else bids.push(item);
+ try{save();closeModal()}catch(err){alert('Could not save this record. The browser may be out of storage space. Try a smaller PDF/JPEG file.')}
+});
+window.editBid=id=>{const b=bids.find(x=>x.id===id);if(b)openModal(b)};
+window.deleteBid=id=>{const b=bids.find(x=>x.id===id);if(b&&confirm(`Delete "${b.title}"? This cannot be undone.`)){bids=bids.filter(x=>x.id!==id);save()}};
+$('exportBtn').onclick=()=>{const cols=['title','organisation','reference','published','deadline','owner','status','submittedDate','notes','fileName'];const csv=[cols.join(','),...bids.map(b=>cols.map(k=>'"'+String(b[k]||'').replace(/"/g,'""')+'"').join(','))].join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='bidtrack-register.csv';a.click();URL.revokeObjectURL(a.href)};
+render();
+</script>
+</body>
+</html>
